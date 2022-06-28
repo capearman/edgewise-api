@@ -1,6 +1,5 @@
 from typing import List, Optional
-from http.client import HTTPException
-from fastapi import APIRouter, status, Depends, Response
+from fastapi import APIRouter, status, Response, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, schemas
@@ -51,5 +50,14 @@ def get_transactions(db: Session = Depends(get_db), limit: int = 10, skip: int =
     
     transactions = db.query(models.Transaction).filter(models.Transaction.description.contains(search)).limit(limit).offset(skip).all()
     return transactions
+
+@router.get("/{id}", response_model=schemas.Transaction)
+def get_transaction(id: int, db: Session = Depends(get_db)):
+    transaction = db.query(models.Transaction).filter(models.Transaction.id == id).first()
+
+    if not transaction:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"transaction with id {id} does not exist.")
+
+    return transaction
 
 
