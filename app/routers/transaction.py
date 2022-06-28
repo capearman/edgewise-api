@@ -1,5 +1,5 @@
 from http.client import HTTPException
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Response
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, schemas
@@ -30,5 +30,19 @@ def update_transaction(id: int, updated_transaction: schemas.Transaction, db: Se
     db.commit()
 
     return transaction_query.first()
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_transaction(id: int, db: Session = Depends(get_db)):
+    transaction_query = db.query(models.Transaction).filter(models.Transaction.id == id)
+    transaction = transaction_query.first()
+
+    if transaction == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"transaction with id {id} does not exist.")
+
+    transaction_query.delete(synchronize_session=False)
+
+    db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
