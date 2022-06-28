@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -9,10 +10,25 @@ router = APIRouter(
 )
 
 @router.post("/",status_code=status.HTTP_201_CREATED)
-def create_transactions(transaction: schemas.Transaction, db:Session = Depends(get_db)):
+def create_transaction(transaction: schemas.Transaction, db:Session = Depends(get_db)):
     new_transaction = models.Transaction(**transaction.dict())
     db.add(new_transaction)
     db.commit()
     db.refresh(new_transaction)
     return new_transaction
+
+@router.put("/{id}", response_model=schemas.Transaction)
+def update_transaction(id: int, updated_transaction: schemas.Transaction, db: Session = Depends(get_db)):
+    transaction_query = db.query(models.Transaction).filter(models.Transaction.id == id)
+    transaction = transaction_query.first()
+
+    if transaction == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"transaction with id {id} does not exist.")
+
+    transaction_query.update(updated_transaction.dict(), synchronize_session=False)
+
+    db.commit()
+
+    return transaction_query.first()
+
 
