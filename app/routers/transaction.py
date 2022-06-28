@@ -1,3 +1,4 @@
+from typing import List, Optional
 from http.client import HTTPException
 from fastapi import APIRouter, status, Depends, Response
 from sqlalchemy.orm import Session
@@ -44,5 +45,11 @@ def delete_transaction(id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.get("/", response_model=List[schemas.Transaction])
+def get_transactions(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
+    
+    transactions = db.query(models.Transaction).filter(models.Transaction.description.contains(search)).limit(limit).offset(skip).all()
+    return transactions
 
 
