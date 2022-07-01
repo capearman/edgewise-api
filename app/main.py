@@ -5,7 +5,7 @@ from .database import engine
 from passlib.context import CryptContext
 
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-models.Base.metadata.create_all(bind=engine) #don't need this after installing alembic. Creates tables when app starts up
+#models.Base.metadata.create_all(bind=engine) #don't need this after installing alembic. Creates tables when app starts up
 
 app = FastAPI()
 
