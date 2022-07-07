@@ -91,16 +91,4 @@ def test_update_transaction_non_exist(client, test_transactions):
 
     result = client.put("/transactions/99999999",json=data)
 
-    assert result.status_code == 404
-
-
-
-
-
-   
-
-
-
-
-
-    
+    assert result.status_code == 404   

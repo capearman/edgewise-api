@@ -27,4 +27,31 @@ class TransactionCreate(BaseModel):
     class Config:
         orm_mode = True
 
+class CategoryOut(BaseModel):
+    id: int
+    name: str
+    planned: condecimal(gt=0, max_digits=10, decimal_places=2)
+    actual: condecimal(gt=0, max_digits=10, decimal_places=2)
+    diff: condecimal(max_digits=10, decimal_places=2)
+    goal: condecimal(gt=0, max_digits=10, decimal_places=2)
+    goal_met: bool
+
+    class Config:
+        orm_mode = True
+
+class CategoryCreate(BaseModel):
+    name: str
+    planned: condecimal(gt=0, max_digits=10, decimal_places=2)
+    goal: condecimal(gt=0, max_digits=10, decimal_places=2)
+
+    class Config:
+        orm_mode = True
+
+class CategoryName(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
 

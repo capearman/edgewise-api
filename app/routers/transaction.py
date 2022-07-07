@@ -12,6 +12,15 @@ router = APIRouter(
 @router.post("/",status_code=status.HTTP_201_CREATED)
 def create_transaction(transaction: schemas.TransactionCreate, db:Session = Depends(get_db)):
     new_transaction = models.Transaction(**transaction.dict())
+    
+    category_id_query = db.query(models.Category.id).filter(models.Category.name == new_transaction.category)
+    category_id = category_id_query.first()
+
+    if not category_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with name {new_transaction.category} has no matching category_id.")
+
+    new_transaction.category_id = category_id[0]
+
     db.add(new_transaction)
     db.commit()
     db.refresh(new_transaction)

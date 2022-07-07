@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, Numeric, DATE
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Numeric, DATE
+from sqlalchemy.orm import relationship
 from .database import Base
 
 class Transaction(Base):
@@ -10,5 +11,14 @@ class Transaction(Base):
     amount = Column(Numeric, nullable=False)
     description = Column(String, nullable=True)
     category = Column(String, nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
     check_box = Column(Boolean, server_default='FALSE', nullable=False)
+
+class Category(Base):
+    __tablename__= "categories"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    name = Column(String, nullable=False)
+    planned = Column(Numeric, nullable=False)
+    goal = Column(Numeric, nullable=False)
     
