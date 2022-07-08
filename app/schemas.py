@@ -1,9 +1,10 @@
 from pydantic import BaseModel, condecimal
+from typing import Literal
 from datetime import date
 
 class TransactionBase(BaseModel):
     id: int
-    type: str #expense or income
+    type: Literal['Income', 'Expense'] #expense or income
     date: date
     amount: condecimal(gt=0, max_digits=10, decimal_places=2) 
     description: str
@@ -20,7 +21,7 @@ class Transaction(TransactionBase):
         orm_mode = True    
 
 class TransactionCreate(BaseModel):
-    type: str #expense or income
+    type: Literal['Income', 'Expense'] 
     date: date
     amount: condecimal(gt=0, max_digits=10, decimal_places=2) 
     description: str
@@ -31,7 +32,7 @@ class TransactionCreate(BaseModel):
         orm_mode = True
 
 class TransactionReadOnly(BaseModel):
-    type: str #expense or income
+    type: Literal['Income', 'Expense'] 
     date: date
     amount: condecimal(gt=0, max_digits=10, decimal_places=2) 
     description: str
@@ -43,7 +44,7 @@ class TransactionReadOnly(BaseModel):
         orm_mode = True
 
 class TransactionUpdate(BaseModel):
-    type: str #expense or income
+    type: Literal['Income', 'Expense'] 
     date: date
     amount: condecimal(gt=0, max_digits=10, decimal_places=2) 
     description: str
@@ -61,7 +62,7 @@ class CategoryOut(BaseModel):
     diff: condecimal(max_digits=10, decimal_places=2)
     goal: condecimal(ge=0, max_digits=10, decimal_places=2)
     goal_met: bool
-    type: str
+    type: Literal['Income', 'Expense'] 
 
     class Config:
         orm_mode = True
@@ -70,7 +71,7 @@ class CategoryCreate(BaseModel):
     name: str
     planned: condecimal(gt=0, max_digits=10, decimal_places=2)
     goal: condecimal(ge=0, max_digits=10, decimal_places=2)
-    type: str
+    type: Literal['Income', 'Expense'] 
 
     class Config:
         orm_mode = True
