@@ -15,14 +15,15 @@ router = APIRouter(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_category(category:schemas.CategoryCreate, db: Session = Depends(get_db)):
     new_category = models.Category(**category.dict())
+
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
     return new_category
 
-@router.get("/names", response_model=List[schemas.CategoryName])
+@router.get("/names/{type}", response_model=List[schemas.CategoryName])
 def get_category_names(db: Session = Depends(get_db)):
-    category_names = db.query(models.Category.name).all()
+    category_names = db.query(models.Category.name).filter(models.Category.type == type).all()
     return category_names
 
 @router.get("/", response_model=List[schemas.CategoryOut])
@@ -33,6 +34,9 @@ def get_categories(db: Session = Depends(get_db)):
         actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name).first()
 
         actual = actual_query[0]
+
+        if not actual:
+            actual = 0
 
         category_obj = category_class.Category(category.name, category.planned, actual, category.goal)
 

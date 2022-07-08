@@ -21,4 +21,4 @@ class Category(Base):
     name = Column(String, nullable=False)
     planned = Column(Numeric, nullable=False)
     goal = Column(Numeric, nullable=False)
-    
+    type = Column(String, nullable=False)

@@ -5,7 +5,7 @@ class Category:
         self.planned = planned
         self.actual = actual
         self.goal = goal
-        self.diff: bool = planned - actual
+        self.diff: float = planned - actual
         self.goal_met: bool = goal <= planned
 
     def set_name(self, name):
