@@ -25,7 +25,8 @@ def upgrade() -> None:
     sa.Column('amount', sa.Numeric(), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
     sa.Column('category', sa.String(), nullable=False),
-    sa.Column('check_box', sa.Boolean(), nullable=False),)
+    sa.Column('check_box', sa.Boolean(), nullable=False),
+    sa.UniqueConstraint('category'),)
 
 
 def downgrade() -> None:
