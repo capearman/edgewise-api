@@ -9,8 +9,8 @@ router = APIRouter(
     tags=['Transactions']
 )
 
-@router.post("/",status_code=status.HTTP_201_CREATED)
-def create_transaction(transaction: schemas.TransactionCreate, db:Session = Depends(get_db)):
+@router.post("/",status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionCreateOut)
+def create_transaction(transaction: schemas.TransactionCreateIn, db:Session = Depends(get_db)):
     new_transaction = models.Transaction(**transaction.dict())
     
     category_id_query = db.query(models.Category.id).filter(models.Category.name == new_transaction.category)
@@ -63,7 +63,7 @@ def update_transaction(id: int, updated_transaction: schemas.TransactionUpdate, 
         transaction.category_name = category_name
         transaction.category_id = category_id[0]
 
-        new_transaction = schemas.TransactionReadOnly(type=transaction.type, date=transaction.date, amount=transaction.amount, description=transaction.description, category=transaction.category, category_id=transaction.category_id, check_box=transaction.check_box)
+        new_transaction = schemas.TransactionReadOnly(id = transaction.id, type=transaction.type, date=transaction.date, amount=transaction.amount, description=transaction.description, category=transaction.category, category_id=transaction.category_id, check_box=transaction.check_box)
 
         query.update(new_transaction.dict(), synchronize_session=False)
         db.commit()

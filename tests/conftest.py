@@ -1,11 +1,12 @@
 from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from app.main import app
 from app.config import settings
 from app.database import get_db, Base
 from app import models
+from fastapi import Depends
 
 SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}_test'
 
@@ -13,6 +14,7 @@ SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 
 @pytest.fixture()
@@ -26,8 +28,6 @@ def session():
     finally:
         db.close()
 
-
-
 @pytest.fixture()
 def client(session):
     def override_get_db():
@@ -36,9 +36,57 @@ def client(session):
             yield session
         finally:
             session.close()
-
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
+
+def pass_to_db(data, model, session):
+    def create_model(data):
+        return model(**data)
+
+    data_map = map(create_model, data)
+    data_list = list(data_map)
+
+    session.add_all(data_list)
+    session.commit()
+
+def fetch_data(model, session):
+    data = session.query(model).all()
+    return data
+
+@pytest.fixture()
+def test_categories(session):
+    categories_data = [
+        {
+           "id":1,
+           "name":"Paycheck",
+           "planned":0,
+           "goal":0,
+           "type": "Income",
+        },
+        {
+            "id":2,
+            "name":"Groceries",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+        },
+        {
+            "id":3,
+            "name":"Date Night",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+        },
+        {
+            "id":4,
+            "name":"Household Expenses",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+        }]
+
+    pass_to_db(categories_data, models.Category, session)
+    return fetch_data(models.Category, session)
 
 @pytest.fixture()
 def test_transactions(session):
@@ -50,6 +98,7 @@ def test_transactions(session):
             "amount": float(2000.69),
             "description": "First software engineer paycheck",
             "category": "Paycheck",
+            "category_id":1,
             "check_box": False
 
         },
@@ -60,6 +109,7 @@ def test_transactions(session):
             "amount": float(2010.59),
             "description": "Second software engineer paycheck",
             "category": "Paycheck",
+            "category_id":1,
             "check_box": False
 
         },
@@ -70,6 +120,7 @@ def test_transactions(session):
             "amount": float(43.55),
             "description": "Aldi",
             "category": "Groceries",
+            "category_id":2,
             "check_box": True
 
         },
@@ -80,6 +131,7 @@ def test_transactions(session):
             "amount": float(33.21),
             "description": "Waffle House",
             "category": "Date Night",
+            "category_id":3,
             "check_box": True
 
         },
@@ -90,6 +142,7 @@ def test_transactions(session):
             "amount": float(8.08),
             "description": "Deli Sandwich",
             "category": "Groceries",
+            "category_id":2,
             "check_box": False
 
         },
@@ -100,18 +153,10 @@ def test_transactions(session):
             "amount": float(40.77),
             "description": "Pillows",
             "category": "Household Expenses",
+            "category_id":4,
             "check_box": True
 
         },]
 
-    def create_transaction_model(transaction):
-        return models.Transaction(**transaction)
-
-    transaction_map = map(create_transaction_model, transactions_data)
-    transactions = list(transaction_map)
-
-    session.add_all(transactions)
-    session.commit()
-    transactions = session.query(models.Transaction).all()
-
-    return transactions
+    pass_to_db(transactions_data, models.Transaction, session)
+    return fetch_data(models.Transaction, session)
