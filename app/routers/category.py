@@ -22,8 +22,12 @@ def create_category(category:schemas.CategoryCreate, db: Session = Depends(get_d
     return new_category
 
 @router.get("/names/{type}", response_model=List[schemas.CategoryName])
-def get_category_names(db: Session = Depends(get_db)):
+def get_category_names(type: str, db: Session = Depends(get_db)):
+
+    if type != "Income" and type != "Expense":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"There is no type: {type}. The only types allowed are 'Income' and Expense'.")
     category_names = db.query(models.Category.name).filter(models.Category.type == type).all()
+    print('\n\n...category names: {category_names}...\n\n\n')
     return category_names
 
 @router.get("/", response_model=List[schemas.CategoryOut])
@@ -57,6 +61,9 @@ def get_category(id: int, db:Session = Depends(get_db)):
 
     actual = actual_query[0]
 
+    if actual == None:
+        actual = 0
+
     category_obj = category_class.Category(category.name, category.planned, actual, category.goal)
 
     setattr(category, 'actual', category_obj.get_actual())
@@ -65,7 +72,6 @@ def get_category(id: int, db:Session = Depends(get_db)):
 
     return category
 
-#TODO: Link Category name with transaction category in database migration
 @router.put("/{id}", response_model=schemas.CategoryOut)
 def update_category(id: int, updated_category: schemas.CategoryCreate, db: Session = Depends(get_db)):
     category_query = db.query(models.Category).filter(models.Category.id == id)

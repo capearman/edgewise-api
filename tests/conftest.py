@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, null
 from sqlalchemy.orm import sessionmaker, Session
 from app.main import app
 from app.config import settings
@@ -54,6 +54,25 @@ def fetch_data(model, session):
     return data
 
 @pytest.fixture()
+def test_headers(session):
+    headers_data = [
+        {
+            "id":1,
+            "name": "Bills",
+        },
+        {
+            "id":2,
+            "name": "Daily",
+        },
+        {
+            "id":3,
+            "name": "Long Term",
+        },]
+
+    pass_to_db(headers_data, models.Header, session)
+    return fetch_data(models.Header, session)
+
+@pytest.fixture()
 def test_categories(session):
     categories_data = [
         {
@@ -69,6 +88,8 @@ def test_categories(session):
             "planned":100,
             "goal":200,
             "type": "Expense",
+            "header":"Daily",
+            "header_id":2,
         },
         {
             "id":3,
@@ -76,6 +97,8 @@ def test_categories(session):
             "planned":100,
             "goal":200,
             "type": "Expense",
+            "header":"Daily",
+            "header_id":2,
         },
         {
             "id":4,
@@ -83,7 +106,58 @@ def test_categories(session):
             "planned":100,
             "goal":200,
             "type": "Expense",
-        }]
+            "header":"Long Term",
+            "header_id":3,
+        },
+        {
+           "id":5,
+           "name":"No Transactions",
+           "planned":0,
+           "goal":0,
+           "type": "Income",
+        },
+        {
+           "id":6,
+           "name":"Testing Category Actual",
+           "planned":0,
+           "goal":0,
+           "type": "Income",
+        },
+        {
+           "id":7,
+           "name":"Testing Category Diff",
+           "planned":40,
+           "goal":0,
+           "type": "Income",
+        },
+        {
+           "id":8,
+           "name":"Testing Category Diff Negative",
+           "planned":5,
+           "goal":0,
+           "type": "Income",
+        },
+        {
+           "id":9,
+           "name":"Testing Category Goal Met True Equal",
+           "planned":5,
+           "goal":5,
+           "type": "Income",
+        },
+        {
+           "id":10,
+           "name":"Testing Category Goal Met True Over",
+           "planned":6,
+           "goal":5,
+           "type": "Income",
+        },
+        {
+           "id":11,
+           "name":"Testing Category Goal Met False",
+           "planned":4,
+           "goal":5,
+           "type": "Income",
+        },]
 
     pass_to_db(categories_data, models.Category, session)
     return fetch_data(models.Category, session)
@@ -154,6 +228,50 @@ def test_transactions(session):
             "description": "Pillows",
             "category": "Household Expenses",
             "category_id":4,
+            "check_box": True
+
+        },
+        {
+            "id": 6,
+            "type": "Expense",
+            "date": "2022-06-10",
+            "amount": float(5),
+            "description": "testing category actual == 10",
+            "category": "Testing Category Actual",
+            "category_id":6,
+            "check_box": True
+
+        },
+        {
+            "id": 7,
+            "type": "Expense",
+            "date": "2022-06-10",
+            "amount": float(5),
+            "description": "testing category actual == 10",
+            "category": "Testing Category Actual",
+            "category_id":6,
+            "check_box": True
+
+        },
+        {
+            "id": 8,
+            "type": "Expense",
+            "date": "2022-06-10",
+            "amount": float(20),
+            "description": "testing category diff",
+            "category": "Testing Category Diff",
+            "category_id":7,
+            "check_box": True
+
+        },
+        {
+            "id": 9,
+            "type": "Expense",
+            "date": "2022-06-10",
+            "amount": float(10),
+            "description": "testing category diff negative",
+            "category": "Testing Category Diff Negative",
+            "category_id":8,
             "check_box": True
 
         },]

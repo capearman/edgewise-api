@@ -22,3 +22,11 @@ class Category(Base):
     planned = Column(Numeric, nullable=False)
     goal = Column(Numeric, nullable=False)
     type = Column(String, nullable=False)
+    header = Column(String, nullable=True)
+    header_id = Column(Integer, ForeignKey("headers.id", ondelete="CASCADE"), nullable=True)
+
+class Header(Base):
+    __tablename__="headers"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    name = Column(String, nullable=False)

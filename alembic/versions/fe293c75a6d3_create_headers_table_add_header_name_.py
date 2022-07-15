@@ -24,9 +24,9 @@ def upgrade() -> None:
     sa.UniqueConstraint('name'),
     )
     op.add_column('categories',
-    sa.Column('header', sa.String(), nullable=False))
+    sa.Column('header', sa.String(), nullable=True))
     op.add_column('categories',
-    sa.Column('header_id', sa.Integer(), nullable=False))
+    sa.Column('header_id', sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:

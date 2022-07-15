@@ -1,14 +1,5 @@
-from unicodedata import category
 from fastapi import FastAPI
-from .routers import transaction, category
-from . import models
-from .database import engine
-from passlib.context import CryptContext
-
-from . import schemas, category_class, models
-from sqlalchemy.orm import Session
-from fastapi import Request, Depends
-from .database import get_db
+from .routers import transaction, category, header
 
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 #models.Base.metadata.create_all(bind=engine) #don't need this after installing alembic. Creates tables when app starts up
@@ -21,4 +12,5 @@ async def root():
 
 app.include_router(transaction.router)
 app.include_router(category.router)
+app.include_router(header.router)
 

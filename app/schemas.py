@@ -1,10 +1,11 @@
 from pydantic import BaseModel, condecimal
 from typing import Literal
 from datetime import date
+from typing import Optional
 
 class TransactionBase(BaseModel):
     id: int
-    type: Literal['Income', 'Expense'] #expense or income
+    type: Literal['Income', 'Expense']  #expense or income
     date: date
     amount: condecimal(gt=0, max_digits=10, decimal_places=2) 
     description: str
@@ -77,15 +78,19 @@ class CategoryOut(BaseModel):
     goal: condecimal(ge=0, max_digits=10, decimal_places=2)
     goal_met: bool
     type: Literal['Income', 'Expense'] 
+    header: Optional[str] = None
+    header_id: Optional[str] = None
 
     class Config:
         orm_mode = True
 
 class CategoryCreate(BaseModel):
     name: str
-    planned: condecimal(gt=0, max_digits=10, decimal_places=2)
+    planned: condecimal(ge=0, max_digits=10, decimal_places=2)
     goal: condecimal(ge=0, max_digits=10, decimal_places=2)
-    type: Literal['Income', 'Expense'] 
+    type: Literal['Income', 'Expense']
+    header: Optional[str] = None
+    header_id: Optional[int] = None
 
     class Config:
         orm_mode = True
@@ -95,6 +100,27 @@ class CategoryName(BaseModel):
 
     class Config:
         orm_mode = True
+
+class Header(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+class HeaderIn(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True
+
+class HeaderOut(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
 
 
 
