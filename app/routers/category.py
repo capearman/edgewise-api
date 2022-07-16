@@ -13,13 +13,29 @@ router = APIRouter(
 )
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_category(category:schemas.CategoryCreate, db: Session = Depends(get_db)):
+def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
+    def pass_to_db(new_category):
+        db.add(new_category)
+        db.commit()
+        db.refresh(new_category)
+        return new_category
+
     new_category = models.Category(**category.dict())
 
-    db.add(new_category)
-    db.commit()
-    db.refresh(new_category)
-    return new_category
+    if category.header == "":
+        pass_to_db(new_category)
+    else:
+
+        header_id_query = db.query(models.Header.id).filter(models.Header.name == new_category.header)
+        header_id = header_id_query.first()
+
+        if header_id == None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"header with name {new_category.header} does not exist")
+
+        new_category.header_id = header_id[0]
+
+        pass_to_db(new_category)
+
 
 @router.get("/names/{type}", response_model=List[schemas.CategoryName])
 def get_category_names(type: str, db: Session = Depends(get_db)):
@@ -73,7 +89,7 @@ def get_category(id: int, db:Session = Depends(get_db)):
     return category
 
 @router.put("/{id}", response_model=schemas.CategoryOut)
-def update_category(id: int, updated_category: schemas.CategoryCreate, db: Session = Depends(get_db)):
+def update_category(id: int, updated_category: schemas.CategoryIn, db: Session = Depends(get_db)):
     category_query = db.query(models.Category).filter(models.Category.id == id)
 
     category = category_query.first()
@@ -81,8 +97,22 @@ def update_category(id: int, updated_category: schemas.CategoryCreate, db: Sessi
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Category with id: {id} does not exist")
 
+    updated_category_header_id = db.query(models.Header.id).filter(models.Header.name == updated_category.header).first()
+
     category_query.update(updated_category.dict(), synchronize_session=False)
     db.commit()
+
+    def category_id_update(query, header_name: str, header_id: int):
+        category = query.first()
+        category.header_name = header_name
+        category.header_id = header_id[0]
+
+        new_category = schemas.CategoryOut(id = category.id, planned=category.planned, goal=category.goal, type=category.type, header=category.header, header_id=category.header_id)
+
+        query.update(new_category.dict(), synchronize_session=False)
+        db.commit()
+
+    category_id_update(category_query, updated_category.header, updated_category_header_id)
 
     new_updated_category = category_query.first()
 

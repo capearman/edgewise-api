@@ -1,11 +1,11 @@
 import pytest
 from app import schemas
 
-create_category_test_fields = "name, planned, goal, type, header, header_id"
+create_category_test_fields = "name, planned, goal, type, header"
 create_category_test_data = [
-    ("New Category",100,200,"Expense","Daily",2),
-    ("Newer Category",200,200,"Expense","Daily",2),
-    ("Newest Category",400,200,"Expense","Daily",2),
+    ("New Category",100,200,"Expense","Daily"),
+    ("Newer Category",200,200,"Expense","Daily"),
+    ("Newest Category",400,200,"Expense","Daily"),
 ]
 
 
@@ -119,12 +119,12 @@ def test_get_all_category_names_invalid_fail(client, test_headers, test_categori
     assert result.status_code == 404
 
 @pytest.mark.parametrize(create_category_test_fields, create_category_test_data)
-def test_create_category_success(client, test_headers, name, planned, goal, type, header, header_id):
-    result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":header, "header_id":header_id})
+def test_create_category_success(client, test_headers, name, planned, goal, type, header):
+    result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":header})
     assert result.status_code == 201
 
 @pytest.mark.parametrize(create_category_test_fields, create_category_test_data)
-def test_create_category_without_header_success(client, test_headers, name, planned, goal, type, header, header_id):
-    result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":"", "header_id": None})
+def test_create_category_without_header_success(client, test_headers, name, planned, goal, type, header):
+    result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":""})
     assert result.status_code == 201
 

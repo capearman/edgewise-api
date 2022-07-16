@@ -84,13 +84,12 @@ class CategoryOut(BaseModel):
     class Config:
         orm_mode = True
 
-class CategoryCreate(BaseModel):
+class CategoryIn(BaseModel):
     name: str
     planned: condecimal(ge=0, max_digits=10, decimal_places=2)
     goal: condecimal(ge=0, max_digits=10, decimal_places=2)
     type: Literal['Income', 'Expense']
     header: Optional[str] = None
-    header_id: Optional[int] = None
 
     class Config:
         orm_mode = True
