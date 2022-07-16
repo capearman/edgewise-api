@@ -12,18 +12,20 @@ router = APIRouter(
     tags=['Categories']
 )
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.CategoryIn)
 def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
+    new_category = models.Category(**category.dict())
+
     def pass_to_db(new_category):
         db.add(new_category)
         db.commit()
         db.refresh(new_category)
         return new_category
 
-    new_category = models.Category(**category.dict())
+    
 
     if category.header == "":
-        pass_to_db(new_category)
+        return pass_to_db(new_category)
     else:
 
         header_id_query = db.query(models.Header.id).filter(models.Header.name == new_category.header)
@@ -34,7 +36,7 @@ def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
 
         new_category.header_id = header_id[0]
 
-        pass_to_db(new_category)
+        return pass_to_db(new_category)
 
 
 @router.get("/names/{type}", response_model=List[schemas.CategoryName])
