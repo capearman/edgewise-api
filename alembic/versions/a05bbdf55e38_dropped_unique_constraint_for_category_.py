@@ -21,4 +21,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.create_unique_constraint('transactions_category_key', 'transactions', type_='unique')
+    op.create_unique_constraint('transactions_category_key', 'transactions', ['category'])

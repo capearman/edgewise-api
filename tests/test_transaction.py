@@ -5,7 +5,12 @@ create_transaction_test_fields = "type, date, amount, description, category, che
 create_transaction_test_data = [
     ("Income", "2022-06-10", 2100.77, "Dead End Job", "Paycheck", False),
     ("Expense", "2022-06-03", 0.50, "Ramen", "Groceries", True),
-    ("Expense", "2022-01-10", 200.55, "Plants", "Household Expenses", False)
+    ("Expense", "2022-01-10", 200.55, "Plants", "Household Expenses", False),
+]
+
+create_multiple_transactions_in_one_category_data = [
+    ("Expense", "2022-01-10", 200.55, "Testing multiple transactions in one category", "Household Expenses", False),
+    ("Expense", "2022-01-10", 200.55, "Testing multiple transactions in one category", "Household Expenses", False),
 ]
 
 update_transaction_test_data = {
@@ -86,6 +91,12 @@ def test_create_transaction_successful(client, test_headers, test_categories, ty
     result = client.post("/transactions/", json={"type":type, "date":date, "amount":amount, "description":description, "category":category, "check_box":check_box})
 
     assert result.status_code == 201
+
+# @pytest.mark.parametrize(create_transaction_test_fields, create_multiple_transactions_in_one_category_data)
+# def test_create_multiple_transactions_in_one_category_successful(client, test_headers, test_categories, type, date, amount, description, category, check_box):
+#     result = client.post("/transactions/", json={"type":type, "date":date, "amount":amount, "description":description, "category":category, "check_box":check_box})
+
+#     assert result.status_code == 201
 
 @pytest.mark.parametrize(create_transaction_test_fields, create_transaction_test_data)
 def test_create_transaction_type(client, test_headers, test_categories, type, date, amount, description, category, check_box):

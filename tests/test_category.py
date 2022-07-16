@@ -4,8 +4,13 @@ from app import schemas
 create_category_test_fields = "name, planned, goal, type, header"
 create_category_test_data = [
     ("New Category",100,200,"Expense","Daily"),
-    ("Newer Category",200,200,"Expense","Daily"),
-    ("Newest Category",400,200,"Expense","Daily"),
+    ("Newer Category",200,200,"Expense","Bills"),
+    ("Newest Category",400,200,"Expense","Long Term"),
+]
+
+create_multiple_categories_same_name = [
+    ("Same Name",100,200,"Expense","Daily"),
+    ("Same Name",200,200,"Income","Daily"),
 ]
 
 
@@ -122,6 +127,11 @@ def test_get_all_category_names_invalid_fail(client, test_headers, test_categori
 def test_create_category_success(client, test_headers, name, planned, goal, type, header):
     result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":header})
     assert result.status_code == 201
+
+# @pytest.mark.parametrize(create_category_test_fields, create_multiple_categories_same_name)
+# def test_create_multiple_categories_same_name(client, test_headers, name, planned, goal, type, header):
+#     result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":header})
+#     assert result.status_code == 201
 
 @pytest.mark.parametrize(create_category_test_fields, create_category_test_data)
 def test_create_category_without_header_success(client, test_headers, name, planned, goal, type, header):
