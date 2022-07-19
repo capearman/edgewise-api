@@ -45,7 +45,6 @@ def get_category_names(type: str, db: Session = Depends(get_db)):
     if type != "Income" and type != "Expense":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"There is no type: {type}. The only types allowed are 'Income' and Expense'.")
     category_names = db.query(models.Category.name).filter(models.Category.type == type).all()
-    print('\n\n...category names: {category_names}...\n\n\n')
     return category_names
 
 @router.get("/", response_model=List[schemas.CategoryOut])
@@ -92,6 +91,7 @@ def get_category(id: int, db:Session = Depends(get_db)):
 
 @router.put("/{id}", response_model=schemas.CategoryOut)
 def update_category(id: int, updated_category: schemas.CategoryIn, db: Session = Depends(get_db)):
+
     category_query = db.query(models.Category).filter(models.Category.id == id)
 
     category = category_query.first()
@@ -105,12 +105,13 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
     db.commit()
 
     def category_id_update(query, header_name: str, header_id: int):
+
         category = query.first()
         category.header_name = header_name
         category.header_id = header_id[0]
 
-        new_category = schemas.CategoryOut(id = category.id, planned=category.planned, goal=category.goal, type=category.type, header=category.header, header_id=category.header_id)
-
+        new_category = schemas.CategoryOutDB(id = category.id, name = category.name, planned=category.planned, goal=category.goal, type=category.type, header=category.header, header_id=category.header_id)
+        
         query.update(new_category.dict(), synchronize_session=False)
         db.commit()
 
@@ -121,6 +122,9 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
     actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name).first()
 
     actual = actual_query[0]
+
+    if actual == None:
+        actual = 0
 
     category_obj = category_class.Category(new_updated_category.name, new_updated_category.planned, actual, new_updated_category.goal)
 

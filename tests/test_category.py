@@ -8,6 +8,14 @@ create_category_test_data = [
     ("Newest Category",400,200,"Expense","Long Term"),
 ]
 
+update_category_test_data = {
+    "name": "Updated Category",
+    "planned": 90,
+    "goal": 40,
+    "type": "Expense",
+    "header": "Bills"
+}
+
 create_multiple_categories_same_name = [
     ("Same Name",100,200,"Expense","Daily"),
     ("Same Name",200,200,"Income","Daily"),
@@ -137,4 +145,41 @@ def test_create_category_success(client, test_headers, name, planned, goal, type
 def test_create_category_without_header_success(client, test_headers, name, planned, goal, type, header):
     result = client.post("/categories/", json = {"name":name, "planned":planned, "goal":goal, "type":type, "header":""})
     assert result.status_code == 201
+
+def test_delete_category_success(client, test_headers, test_categories, test_transactions):
+    result = client.delete(f"/categories/{test_categories[0].id}")
+    assert result.status_code == 204
+
+def test_delete_category_non_exist(client):
+    result = client.delete("/categories/9999999999")
+    assert result.status_code == 404
+
+def test_update_category_success(client, test_headers, test_categories, test_transactions):
+    result = client.put(f"/categories/{test_categories[4].id}",json=update_category_test_data)
+    assert result.status_code == 200
+
+def test_update_category_name(client, test_headers, test_categories, test_transactions):
+    result = client.put(f"/categories/{test_categories[3].id}",json=update_category_test_data)
+    updated_transaction = schemas.CategoryOut(**result.json())
+    assert updated_transaction.name == update_category_test_data['name']
+
+def test_update_category_planned(client, test_headers, test_categories, test_transactions):
+    result = client.put(f"/categories/{test_categories[3].id}",json=update_category_test_data)
+    updated_transaction = schemas.CategoryOut(**result.json())
+    assert updated_transaction.planned == update_category_test_data['planned']
+
+def test_update_category_goal(client, test_headers, test_categories, test_transactions):
+    result = client.put(f"/categories/{test_categories[3].id}",json=update_category_test_data)
+    updated_transaction = schemas.CategoryOut(**result.json())
+    assert updated_transaction.planned == update_category_test_data['planned']
+
+def test_update_category_type(client, test_headers, test_categories, test_transactions):
+    result = client.put(f"/categories/{test_categories[3].id}",json=update_category_test_data)
+    updated_transaction = schemas.CategoryOut(**result.json())
+    assert updated_transaction.type == update_category_test_data['type']
+
+def test_update_category_header(client, test_headers, test_categories, test_transactions):
+    result = client.put(f"/categories/{test_categories[3].id}",json=update_category_test_data)
+    updated_transaction = schemas.CategoryOut(**result.json())
+    assert updated_transaction.header == update_category_test_data['header']
 
