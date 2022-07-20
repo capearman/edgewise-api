@@ -74,3 +74,22 @@ def test_update_header_name(client, test_headers, test_categories, test_transact
     result = client.put(f"/headers/{test_headers[2].id}",json=update_header_test_data)
     updated_header = schemas.Header(**result.json())
     assert updated_header.name == update_header_test_data['name']
+
+def test_get_all_categories_in_header_success(client, test_headers, test_categories, test_transactions):
+    result = client.get(f"/headers/categories/{test_headers[3].id}")
+    assert result.status_code == 200
+
+def test_get_all_categories_in_header_that_exist(client, test_headers, test_categories, test_transactions):
+    result = client.get(f"/headers/categories/{test_headers[3].id}")
+    categories = result.json()['categories']
+    print(f"\n\n...categories: {categories}...\n\n")
+    assert len(categories) == 4
+
+def test_get_all_categories_in_header_that_exist_validate(client, test_headers, test_categories, test_transactions):
+    result = client.get(f"/headers/categories/{test_headers[3].id}")
+    header_categories = result.json()
+
+    def validate(header_category):
+        return schemas.HeaderCategories(**header_category)
+    
+    assert validate(header_categories)

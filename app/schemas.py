@@ -1,7 +1,7 @@
 from pydantic import BaseModel, condecimal
 from typing import Literal
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 class TransactionBase(BaseModel):
     id: int
@@ -128,6 +128,15 @@ class HeaderIn(BaseModel):
 class HeaderOut(BaseModel):
     id: int
     name: str
+
+    class Config:
+        orm_mode = True
+
+class HeaderCategories(BaseModel):
+    id: int
+    name: str
+
+    categories: List[CategoryOut]
 
     class Config:
         orm_mode = True

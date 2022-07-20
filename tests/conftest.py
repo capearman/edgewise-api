@@ -67,7 +67,11 @@ def test_headers(session):
         {
             "id":3,
             "name": "Long Term",
-        },]
+        },
+        {
+            "id":4,
+            "name": "Count My Categories!",
+        }]
 
     pass_to_db(headers_data, models.Header, session)
     return fetch_data(models.Header, session)
@@ -157,7 +161,43 @@ def test_categories(session):
            "planned":4,
            "goal":5,
            "type": "Income",
-        },]
+        },
+        {
+            "id":12,
+            "name":"Cat1",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+            "header":"Count My Categories!",
+            "header_id":4,
+        },
+        {
+            "id":13,
+            "name":"Cat2",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+            "header":"Count My Categories!",
+            "header_id":4,
+        },
+        {
+            "id":14,
+            "name":"Cat3",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+            "header":"Count My Categories!",
+            "header_id":4,
+        },
+        {
+            "id":15,
+            "name":"Cat4",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+            "header":"Count My Categories!",
+            "header_id":4,
+        }]
 
     pass_to_db(categories_data, models.Category, session)
     return fetch_data(models.Category, session)
