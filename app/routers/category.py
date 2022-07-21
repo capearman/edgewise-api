@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Response, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..database import get_db
-from .. import models, schemas, category_class
+from .. import models, schemas, category_class, exceptions
 import json
 
 
@@ -15,6 +15,7 @@ router = APIRouter(
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.CategoryIn)
 def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
     new_category = models.Category(**category.dict())
+    # new_category_header_id = db.query(models.Header.id).filter(models.Header.name == new_category.header).first()
 
     def pass_to_db(new_category):
         db.add(new_category)
@@ -24,9 +25,22 @@ def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
 
     
 
+    
+
+    # if new_category_header_id != None and new_category.type == 'Income':
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category with a header cannot be assigned the type 'Income'.")
+    
     if category.header == "":
+        if new_category.type == 'Expense':
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category without a header cannot be assigned the type 'Expense'")
+
+        
+        
         return pass_to_db(new_category)
     else:
+        if new_category.type == 'Income':
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category with a header cannot be assigned the type 'Income'.")
+    
 
         header_id_query = db.query(models.Header.id).filter(models.Header.name == new_category.header)
         header_id = header_id_query.first()
@@ -101,12 +115,22 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
 
     updated_category_header_id = db.query(models.Header.id).filter(models.Header.name == updated_category.header).first()
 
+    if updated_category_header_id == None and updated_category.type == 'Expense':
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category without a header cannot be assigned to the type 'Expense'")
+
+    if updated_category_header_id != None and updated_category.type == 'Income':
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category with a header cannot be assigned the type 'Income'.")
+
+    
+    
     category_query.update(updated_category.dict(), synchronize_session=False)
     db.commit()
 
     def category_id_update(query, header_name: str, header_id: int):
 
         category = query.first()
+
+        # if header_id != None and header_name == "":
         category.header_name = header_name
         category.header_id = header_id[0]
 

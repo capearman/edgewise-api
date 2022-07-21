@@ -197,6 +197,15 @@ def test_categories(session):
             "type": "Expense",
             "header":"Count My Categories!",
             "header_id":4,
+        },
+        {
+            "id":16,
+            "name":"Testing change type from Expense to Income with a header assigned",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+            "header":"Long Term",
+            "header_id":3,
         }]
 
     pass_to_db(categories_data, models.Category, session)
