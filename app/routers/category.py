@@ -116,7 +116,7 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
     updated_category_header_id = db.query(models.Header.id).filter(models.Header.name == updated_category.header).first()
 
     if updated_category_header_id == None and updated_category.type == 'Expense':
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category without a header cannot be assigned to the type 'Expense'")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category without a header cannot be assigned to the type 'Expense'.")
 
     if updated_category_header_id != None and updated_category.type == 'Income':
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category with a header cannot be assigned the type 'Income'.")

@@ -141,6 +141,10 @@ class HeaderCategories(BaseModel):
     class Config:
         orm_mode = True
 
+class Metrics(BaseModel):
+    money_to_categorize: condecimal(max_digits=10, decimal_places=2)
+    current_balance: condecimal(max_digits=10, decimal_places=2)
+
 
 
 

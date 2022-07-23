@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import transaction, category, header
+from .routers import transaction, category, header, metrics
 
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 #models.Base.metadata.create_all(bind=engine) #don't need this after installing alembic. Creates tables when app starts up
@@ -13,4 +13,5 @@ async def root():
 app.include_router(transaction.router)
 app.include_router(category.router)
 app.include_router(header.router)
+app.include_router(metrics.router)
 
