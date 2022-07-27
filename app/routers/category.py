@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Response, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..database import get_db
-from .. import models, schemas, category_class, exceptions
+from .. import models, schemas, category_class, exceptions, oauth2
 import json
 
 
@@ -13,36 +13,25 @@ router = APIRouter(
 )
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.CategoryIn)
-def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
-    new_category = models.Category(**category.dict())
-    # new_category_header_id = db.query(models.Header.id).filter(models.Header.name == new_category.header).first()
-
+def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    new_category = models.Category(owner_id = current_user.id, **category.dict())
+    
     def pass_to_db(new_category):
         db.add(new_category)
         db.commit()
         db.refresh(new_category)
         return new_category
 
-    
-
-    
-
-    # if new_category_header_id != None and new_category.type == 'Income':
-    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category with a header cannot be assigned the type 'Income'.")
-    
     if category.header == "":
         if new_category.type == 'Expense':
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category without a header cannot be assigned the type 'Expense'")
 
-        
-        
         return pass_to_db(new_category)
     else:
         if new_category.type == 'Income':
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A category with a header cannot be assigned the type 'Income'.")
     
-
-        header_id_query = db.query(models.Header.id).filter(models.Header.name == new_category.header)
+        header_id_query = db.query(models.Header.id).filter(models.Header.name == new_category.header, models.Header.owner_id == current_user.id)
         header_id = header_id_query.first()
 
         if header_id == None:
@@ -54,19 +43,19 @@ def create_category(category:schemas.CategoryIn, db: Session = Depends(get_db)):
 
 
 @router.get("/names/{type}", response_model=List[schemas.CategoryName])
-def get_category_names(type: str, db: Session = Depends(get_db)):
+def get_category_names(type: str, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     if type != "Income" and type != "Expense":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"There is no type: {type}. The only types allowed are 'Income' and Expense'.")
-    category_names = db.query(models.Category.name).filter(models.Category.type == type).all()
+    category_names = db.query(models.Category.name).filter(models.Category.type == type, models.Category.owner_id == current_user.id).all()
     return category_names
 
 @router.get("/", response_model=List[schemas.CategoryOut])
-def get_categories(db: Session = Depends(get_db)):
-    categories = db.query(models.Category).all()
+def get_categories(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    categories = db.query(models.Category).filter(models.Category.owner_id == current_user.id).all()
 
     for category in categories:
-        actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name).first()
+        actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name, models.Transaction.owner_id == current_user.id).first()
 
         actual = actual_query[0]
 
@@ -82,13 +71,13 @@ def get_categories(db: Session = Depends(get_db)):
     return categories
 
 @router.get("/{id}", response_model=schemas.CategoryOut)
-def get_category(id: int, db:Session = Depends(get_db)):
-    category = db.query(models.Category).filter(models.Category.id == id).first()
+def get_category(id: int, db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    category = db.query(models.Category).filter(models.Category.id == id, models.Category.owner_id == current_user.id).first()
 
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with id: {id} does not exist")
 
-    actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name).first()
+    actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name, models.Transaction.owner_id == current_user.id).first()
 
     actual = actual_query[0]
 
@@ -104,7 +93,7 @@ def get_category(id: int, db:Session = Depends(get_db)):
     return category
 
 @router.put("/{id}", response_model=schemas.CategoryOut)
-def update_category(id: int, updated_category: schemas.CategoryIn, db: Session = Depends(get_db)):
+def update_category(id: int, updated_category: schemas.CategoryIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     category_query = db.query(models.Category).filter(models.Category.id == id)
 
@@ -112,6 +101,9 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
 
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Category with id: {id} does not exist")
+
+    if category.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action.")
 
     updated_category_header_id = db.query(models.Header.id).filter(models.Header.name == updated_category.header).first()
 
@@ -159,13 +151,16 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
     return new_updated_category
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_category(id: int, db: Session = Depends(get_db)):
+def delete_category(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     category_query = db.query(models.Category).filter(models.Category.id == id)
 
     category = category_query.first()
 
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Category with id: {id} does not exist")
+
+    if category.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action.")
 
     category_query.delete(synchronize_session=False)
     db.commit()

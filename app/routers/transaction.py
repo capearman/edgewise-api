@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, status, Response, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
-from .. import models, schemas
+from .. import models, schemas, oauth2
 
 router = APIRouter(
     prefix="/transactions",
@@ -10,18 +10,19 @@ router = APIRouter(
 )
 
 @router.post("/",status_code=status.HTTP_201_CREATED, response_model=schemas.TransactionCreateOut)
-def create_transaction(transaction: schemas.TransactionCreateIn, db:Session = Depends(get_db)):
-    new_transaction = models.Transaction(**transaction.dict())
+def create_transaction(transaction: schemas.TransactionCreateIn, db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    new_transaction = models.Transaction(owner_id = current_user.id, **transaction.dict())
     
-    category_id_query = db.query(models.Category.id).filter(models.Category.name == new_transaction.category)
+    category_id_query = db.query(models.Category.id).filter(models.Category.name == new_transaction.category, models.Category.owner_id == current_user.id)
     category_id = category_id_query.first()
 
     if not category_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with name {new_transaction.category} does not exist")
 
     new_transaction.category_id = category_id[0]
+    new_transaction.owner_id = current_user.id
 
-    category_type_query = db.query(models.Category.type).filter(models.Category.id == new_transaction.category_id)
+    category_type_query = db.query(models.Category.type).filter(models.Category.id == new_transaction.category_id, models.Category.owner_id == current_user.id)
     category_type = category_type_query.first()
 
     if category_type[0] != new_transaction.type:
@@ -33,22 +34,25 @@ def create_transaction(transaction: schemas.TransactionCreateIn, db:Session = De
     return new_transaction
 
 @router.put("/{id}", response_model=schemas.TransactionReadOnly)
-def update_transaction(id: int, updated_transaction: schemas.TransactionUpdate, db: Session = Depends(get_db)):
+def update_transaction(id: int, updated_transaction: schemas.TransactionUpdate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     transaction_query = db.query(models.Transaction).filter(models.Transaction.id == id)
     transaction = transaction_query.first()
 
     if transaction == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"transaction with id {id} does not exist.")
 
-    category_query = db.query(models.Category.name).filter(models.Category.name == updated_transaction.category)
+    if transaction.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action.")
+
+    category_query = db.query(models.Category.name).filter(models.Category.name == updated_transaction.category, models.Category.owner_id == current_user.id)
     category = category_query.first()
 
-    updated_transaction_category_id = db.query(models.Category.id).filter(models.Category.name == updated_transaction.category).first()
+    updated_transaction_category_id = db.query(models.Category.id).filter(models.Category.name == updated_transaction.category, models.Category.owner_id == current_user.id).first()
 
     if category == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with name {updated_transaction.category} does not exist.")
 
-    category_type_query = db.query(models.Category.type).filter(models.Category.id == updated_transaction_category_id[0])
+    category_type_query = db.query(models.Category.type).filter(models.Category.id == updated_transaction_category_id[0], models.Category.owner_id == current_user.id)
     category_type = category_type_query.first()
 
     if category_type[0] != updated_transaction.type:
@@ -73,12 +77,15 @@ def update_transaction(id: int, updated_transaction: schemas.TransactionUpdate, 
     return transaction_query.first()
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_transaction(id: int, db: Session = Depends(get_db)):
+def delete_transaction(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     transaction_query = db.query(models.Transaction).filter(models.Transaction.id == id)
     transaction = transaction_query.first()
 
     if transaction == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"transaction with id {id} does not exist.")
+
+    if transaction.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action.")
 
     transaction_query.delete(synchronize_session=False)
 
@@ -87,14 +94,14 @@ def delete_transaction(id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/", response_model=List[schemas.Transaction])
-def get_transactions(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
+def get_transactions(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = "", current_user: int = Depends(oauth2.get_current_user)):
     
-    transactions = db.query(models.Transaction).filter(models.Transaction.description.contains(search)).limit(limit).offset(skip).all()
+    transactions = db.query(models.Transaction).filter(models.Transaction.description.contains(search), models.Transaction.owner_id == current_user.id).limit(limit).offset(skip).all()
     return transactions
 
 @router.get("/{id}", response_model=schemas.Transaction)
-def get_transaction(id: int, db: Session = Depends(get_db)):
-    transaction = db.query(models.Transaction).filter(models.Transaction.id == id).first()
+def get_transaction(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    transaction = db.query(models.Transaction).filter(models.Transaction.id == id, models.Transaction.owner_id == current_user.id).first()
 
     if not transaction:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"transaction with id {id} does not exist.")

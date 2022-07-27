@@ -1,10 +1,20 @@
 from fastapi import FastAPI
-from .routers import transaction, category, header, metrics
-
-#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-#models.Base.metadata.create_all(bind=engine) #don't need this after installing alembic. Creates tables when app starts up
+from fastapi.middleware.cors import CORSMiddleware
+from .routers import transaction, category, header, metrics, user, auth
 
 app = FastAPI()
+
+#CORS stuff
+#TODO: Change this upon deployment?
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def root():
@@ -14,4 +24,6 @@ app.include_router(transaction.router)
 app.include_router(category.router)
 app.include_router(header.router)
 app.include_router(metrics.router)
+app.include_router(user.router)
+app.include_router(auth.router)
 

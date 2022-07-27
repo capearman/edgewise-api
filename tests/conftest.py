@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import get_db, Base
 from app import models
 from fastapi import Depends
+from app.oauth2 import create_access_token
 
 SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}_test'
 
@@ -53,31 +54,83 @@ def fetch_data(model, session):
     data = session.query(model).all()
     return data
 
+@pytest.fixture
+def test_user(client):
+    user_data = {
+        "email":"oldfart@aol.com",
+        "password":"beans123"
+    }
+
+    res = client.post("/users/", json=user_data)
+
+    assert res.status_code == 201
+
+    new_user = res.json()
+    new_user['password'] = user_data['password']
+    return new_user
+
+@pytest.fixture
+def test_user2(client):
+    user_data = {
+        "email":"oldfart123@aol.com",
+        "password":"beans123"
+    }
+
+    res = client.post("/users/", json=user_data)
+
+    assert res.status_code == 201
+
+    new_user = res.json()
+    new_user['password'] = user_data['password']
+    return new_user
+
+@pytest.fixture
+def token(test_user):
+    return create_access_token({'user_id': test_user['id']})
+
+@pytest.fixture
+def authorized_client(client, token):
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {token}"
+    }
+
+    return client
+
 @pytest.fixture()
-def test_headers(session):
+def test_headers(session, test_user, test_user2):
     headers_data = [
         {
             "id":1,
             "name": "Bills",
+            "owner_id": test_user['id']
         },
         {
             "id":2,
             "name": "Daily",
+            "owner_id": test_user['id']
         },
         {
             "id":3,
             "name": "Long Term",
+            "owner_id": test_user['id']
         },
         {
             "id":4,
             "name": "Count My Categories!",
+            "owner_id": test_user['id']
+        },
+        {
+            "id":5,
+            "name": "Owned By Another User!",
+            "owner_id": test_user2['id']
         }]
 
     pass_to_db(headers_data, models.Header, session)
     return fetch_data(models.Header, session)
 
 @pytest.fixture()
-def test_categories(session):
+def test_categories(session, test_user, test_user2):
     categories_data = [
         {
            "id":1,
@@ -85,6 +138,7 @@ def test_categories(session):
            "planned":0,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
             "id":2,
@@ -94,6 +148,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Daily",
             "header_id":2,
+            "owner_id": test_user['id']
         },
         {
             "id":3,
@@ -103,6 +158,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Daily",
             "header_id":2,
+            "owner_id": test_user['id']
         },
         {
             "id":4,
@@ -112,6 +168,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Long Term",
             "header_id":3,
+            "owner_id": test_user['id']
         },
         {
            "id":5,
@@ -119,6 +176,7 @@ def test_categories(session):
            "planned":0,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
            "id":6,
@@ -126,6 +184,7 @@ def test_categories(session):
            "planned":0,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
            "id":7,
@@ -133,6 +192,7 @@ def test_categories(session):
            "planned":40,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
            "id":8,
@@ -140,6 +200,7 @@ def test_categories(session):
            "planned":5,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
            "id":9,
@@ -147,6 +208,7 @@ def test_categories(session):
            "planned":5,
            "goal":5,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
            "id":10,
@@ -154,6 +216,7 @@ def test_categories(session):
            "planned":6,
            "goal":5,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
            "id":11,
@@ -161,6 +224,7 @@ def test_categories(session):
            "planned":4,
            "goal":5,
            "type": "Income",
+           "owner_id": test_user['id']
         },
         {
             "id":12,
@@ -170,6 +234,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Count My Categories!",
             "header_id":4,
+            "owner_id": test_user['id']
         },
         {
             "id":13,
@@ -179,6 +244,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Count My Categories!",
             "header_id":4,
+            "owner_id": test_user['id']
         },
         {
             "id":14,
@@ -188,6 +254,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Count My Categories!",
             "header_id":4,
+            "owner_id": test_user['id']
         },
         {
             "id":15,
@@ -197,6 +264,7 @@ def test_categories(session):
             "type": "Expense",
             "header":"Count My Categories!",
             "header_id":4,
+            "owner_id": test_user['id']
         },
         {
             "id":16,
@@ -206,13 +274,24 @@ def test_categories(session):
             "type": "Expense",
             "header":"Long Term",
             "header_id":3,
+            "owner_id": test_user['id']
+        },
+        {
+            "id":17,
+            "name":"Owned by another user!",
+            "planned":100,
+            "goal":200,
+            "type": "Expense",
+            "header":"Owned By Another User!",
+            "header_id":5,
+            "owner_id": test_user2['id']
         }]
 
     pass_to_db(categories_data, models.Category, session)
     return fetch_data(models.Category, session)
 
 @pytest.fixture()
-def test_transactions(session):
+def test_transactions(session, test_user, test_user2):
     transactions_data = [
         {
             "id": 0,
@@ -222,7 +301,8 @@ def test_transactions(session):
             "description": "First software engineer paycheck",
             "category": "Paycheck",
             "category_id":1,
-            "check_box": False
+            "check_box": False,
+            "owner_id": test_user['id']
 
         },
         {
@@ -233,7 +313,8 @@ def test_transactions(session):
             "description": "Second software engineer paycheck",
             "category": "Paycheck",
             "category_id":1,
-            "check_box": False
+            "check_box": False,
+            "owner_id": test_user['id']
 
         },
         {
@@ -244,7 +325,8 @@ def test_transactions(session):
             "description": "Aldi",
             "category": "Groceries",
             "category_id":2,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
 
         },
         {
@@ -255,7 +337,8 @@ def test_transactions(session):
             "description": "Waffle House",
             "category": "Date Night",
             "category_id":3,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
 
         },
         {
@@ -266,7 +349,8 @@ def test_transactions(session):
             "description": "Deli Sandwich",
             "category": "Groceries",
             "category_id":2,
-            "check_box": False
+            "check_box": False,
+            "owner_id": test_user['id']
 
         },
         {
@@ -277,7 +361,8 @@ def test_transactions(session):
             "description": "Pillows",
             "category": "Household Expenses",
             "category_id":4,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
 
         },
         {
@@ -288,7 +373,8 @@ def test_transactions(session):
             "description": "testing category actual == 10",
             "category": "Testing Category Actual",
             "category_id":6,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
 
         },
         {
@@ -299,7 +385,8 @@ def test_transactions(session):
             "description": "testing category actual == 10",
             "category": "Testing Category Actual",
             "category_id":6,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
 
         },
         {
@@ -310,7 +397,8 @@ def test_transactions(session):
             "description": "testing category diff",
             "category": "Testing Category Diff",
             "category_id":7,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
 
         },
         {
@@ -321,12 +409,28 @@ def test_transactions(session):
             "description": "testing category diff negative",
             "category": "Testing Category Diff Negative",
             "category_id":8,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id']
+
+        },
+        {
+            "id": 10,
+            "type": "Expense",
+            "date": "2022-06-10",
+            "amount": float(10),
+            "description": "owned by another user",
+            "category": "Owned by another user!",
+            "category_id":17,
+            "check_box": True,
+            "owner_id": test_user2['id']
 
         },]
 
+
     pass_to_db(transactions_data, models.Transaction, session)
     return fetch_data(models.Transaction, session)
+
+
 
     ################## For Testing Metrics #####################
 @pytest.fixture()

@@ -1,7 +1,23 @@
-from pydantic import BaseModel, condecimal
+from pydantic import BaseModel, condecimal, EmailStr
 from typing import Literal
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, List
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 class TransactionBase(BaseModel):
     id: int
@@ -144,6 +160,13 @@ class HeaderCategories(BaseModel):
 class Metrics(BaseModel):
     money_to_categorize: condecimal(max_digits=10, decimal_places=2)
     current_balance: condecimal(max_digits=10, decimal_places=2)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id: Optional[str] = None
 
 
 

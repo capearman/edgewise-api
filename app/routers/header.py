@@ -3,7 +3,7 @@ from fastapi import APIRouter, status, Response, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..database import get_db
-from .. import models, schemas, category_class, header_class
+from .. import models, schemas, category_class, header_class, oauth2
 
 router = APIRouter(
     prefix="/headers",
@@ -11,8 +11,8 @@ router = APIRouter(
 )
 
 @router.post("/",status_code=status.HTTP_201_CREATED, response_model=schemas.HeaderOut)
-def create_header(header: schemas.HeaderIn, db:Session = Depends(get_db)):
-    new_header = models.Header(**header.dict())
+def create_header(header: schemas.HeaderIn, db:Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    new_header = models.Header(owner_id = current_user.id, **header.dict())
     
     db.add(new_header)
     db.commit()
@@ -20,24 +20,30 @@ def create_header(header: schemas.HeaderIn, db:Session = Depends(get_db)):
     return new_header
 
 @router.put("/{id}", response_model=schemas.HeaderOut)
-def update_header(id: int, updated_header: schemas.HeaderIn, db: Session = Depends(get_db)):
+def update_header(id: int, updated_header: schemas.HeaderIn, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     header_query = db.query(models.Header).filter(models.Header.id == id)
     header = header_query.first()
 
     if header == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"header with id {id} does not exist.")
+
+    if header.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action.")
 
     header_query.update(updated_header.dict(), synchronize_session=False)
     db.commit()
     return header_query.first()
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_header(id: int, db: Session = Depends(get_db)):
+def delete_header(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     header_query = db.query(models.Header).filter(models.Header.id == id)
     header = header_query.first()
 
     if header == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"header with id {id} does not exist.")
+
+    if header.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action.")
 
     header_query.delete(synchronize_session=False)
 
@@ -46,20 +52,24 @@ def delete_header(id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/", response_model=List[schemas.Header])
-def get_headers(db: Session = Depends(get_db)):
+def get_headers(db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     
-    headers = db.query(models.Header).all()
+    headers = db.query(models.Header).filter(models.Header.owner_id == current_user.id).all()
+
+    if not headers:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with id: {id} does not exist")
+
     return headers
 
 @router.get("/categories/{header_id}", response_model=schemas.HeaderCategories)
-def get_header_categories(header_id: int, db: Session = Depends(get_db)):
+def get_header_categories(header_id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
-    header = db.query(models.Header).filter(models.Header.id == header_id).first()
+    header = db.query(models.Header).filter(models.Header.id == header_id, models.Header.owner_id == current_user.id).first()
 
     if not header:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"header with id {id} does not exist.")
 
-    categories = db.query(models.Category).filter(models.Category.header_id == header_id).all()
+    categories = db.query(models.Category).filter(models.Category.header_id == header_id, models.Category.owner_id == current_user.id).all()
 
     for category in categories:
         actual_query = db.query(func.sum(models.Transaction.amount)).filter(models.Transaction.category == category.name).first()
@@ -85,8 +95,8 @@ def get_header_categories(header_id: int, db: Session = Depends(get_db)):
     return header_categories_obj
 
 @router.get("/{id}", response_model=schemas.HeaderOut)
-def get_header(id: int, db: Session = Depends(get_db)):
-    header = db.query(models.Header).filter(models.Header.id == id).first()
+def get_header(id: int, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    header = db.query(models.Header).filter(models.Header.id == id, models.Header.owner_id == current_user.id).first()
 
     if not header:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"header with id {id} does not exist.")
