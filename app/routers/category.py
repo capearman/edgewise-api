@@ -122,7 +122,6 @@ def update_category(id: int, updated_category: schemas.CategoryIn, db: Session =
 
         category = query.first()
 
-        # if header_id != None and header_name == "":
         category.header_name = header_name
         category.header_id = header_id[0]
 

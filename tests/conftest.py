@@ -40,6 +40,19 @@ def client(session):
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
 
+@pytest.fixture()
+def token(test_user):
+    return create_access_token({'user_id': test_user['id']})
+
+@pytest.fixture()
+def authorized_client(client, token):
+    client.headers = {
+        **client.headers,
+        "Authorization": f"Bearer {token}"
+    }
+
+    return client
+
 def pass_to_db(data, model, session):
     def create_model(data):
         return model(**data)
@@ -54,22 +67,55 @@ def fetch_data(model, session):
     data = session.query(model).all()
     return data
 
-@pytest.fixture
+@pytest.fixture()
+def user_with_balance(session):
+    test_user_data = [
+        {
+            "id":1,
+            "email":"john@gmail.com",
+            "password":"bestpasswordever!!",
+            "created_at":"2022-07-27 15:24:12.572865-04",
+            "last_month_balance":23456.56,
+        },
+
+        ]
+
+    pass_to_db(test_user_data, models.User, session)
+    return fetch_data(models.User, session)
+
+# @pytest.fixture()
+# def test_user(client):
+#     user_data = {
+#         "email":"oldfart@aol.com",
+#         "password":"beans123"
+#     }
+
+#     res = client.post("/users/", json=user_data)
+
+#     assert res.status_code == 201
+
+#     new_user = res.json()
+#     new_user['password'] = user_data['password']
+#     return new_user
+
+@pytest.fixture()
 def test_user(client):
     user_data = {
-        "email":"oldfart@aol.com",
+        "email":"oldfartt@aol.com",
         "password":"beans123"
     }
 
     res = client.post("/users/", json=user_data)
 
-    assert res.status_code == 201
+    assert res. status_code == 201
 
     new_user = res.json()
     new_user['password'] = user_data['password']
     return new_user
 
-@pytest.fixture
+
+
+@pytest.fixture()
 def test_user2(client):
     user_data = {
         "email":"oldfart123@aol.com",
@@ -84,18 +130,7 @@ def test_user2(client):
     new_user['password'] = user_data['password']
     return new_user
 
-@pytest.fixture
-def token(test_user):
-    return create_access_token({'user_id': test_user['id']})
 
-@pytest.fixture
-def authorized_client(client, token):
-    client.headers = {
-        **client.headers,
-        "Authorization": f"Bearer {token}"
-    }
-
-    return client
 
 @pytest.fixture()
 def test_headers(session, test_user, test_user2):
@@ -426,27 +461,31 @@ def test_transactions(session, test_user, test_user2):
 
         },]
 
-
     pass_to_db(transactions_data, models.Transaction, session)
     return fetch_data(models.Transaction, session)
 
 
 
-    ################## For Testing Metrics #####################
+
+
+    ################## For Testing Metrics 1 #####################
 @pytest.fixture()
-def headers_for_metrics_testing_mtc_negative(session):
+def headers_for_metrics_testing1(session, test_user):
     headers_data = [
         {
             "id":1,
             "name": "Bills",
+            "owner_id": test_user['id'],
         },
         {
             "id":2,
             "name": "Daily",
+            "owner_id": test_user['id'],
         },
         {
             "id":3,
             "name": "Long Term",
+            "owner_id": test_user['id'],
         },
 ]
 
@@ -454,7 +493,7 @@ def headers_for_metrics_testing_mtc_negative(session):
     return fetch_data(models.Header, session)
 
 @pytest.fixture()
-def categories_for_metrics_testing_mtc_negative(session):
+def categories_for_metrics_testing1(session, test_user):
     categories_data = [
         {
            "id":1,
@@ -464,6 +503,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "type": "Expense",
            "header":"Bills",
            "header_id":1,
+           "owner_id": test_user['id'],
         },
         {
             "id":2,
@@ -473,6 +513,7 @@ def categories_for_metrics_testing_mtc_negative(session):
             "type": "Expense",
             "header":"Bills",
             "header_id":1,
+            "owner_id": test_user['id'],
         },
         {
             "id":3,
@@ -482,6 +523,7 @@ def categories_for_metrics_testing_mtc_negative(session):
             "type": "Expense",
             "header":"Bills",
             "header_id":1,
+            "owner_id": test_user['id'],
         },
         {
             "id":4,
@@ -491,6 +533,7 @@ def categories_for_metrics_testing_mtc_negative(session):
             "type": "Expense",
             "header":"Bills",
             "header_id":1,
+            "owner_id": test_user['id'],
         },
         {
            "id":5,
@@ -500,6 +543,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "type": "Expense",
            "header":"Daily",
            "header_id":2,
+           "owner_id": test_user['id'],
         },
         {
            "id":6,
@@ -509,6 +553,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "type": "Expense",
            "header":"Daily",
            "header_id":2,
+           "owner_id": test_user['id'],
         },
         {
            "id":7,
@@ -518,6 +563,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "type": "Expense",
            "header":"Long Term",
            "header_id":3,
+           "owner_id": test_user['id'],
         },
         {
            "id":8,
@@ -527,6 +573,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "type": "Expense",
            "header":"Long Term",
            "header_id":3,
+           "owner_id": test_user['id'],
         },
         {
            "id":9,
@@ -534,6 +581,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "planned":0,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id'],
         },
         {
            "id":10,
@@ -541,6 +589,7 @@ def categories_for_metrics_testing_mtc_negative(session):
            "planned":0,
            "goal":0,
            "type": "Income",
+           "owner_id": test_user['id'],
         },
     ]
 
@@ -548,7 +597,7 @@ def categories_for_metrics_testing_mtc_negative(session):
     return fetch_data(models.Category, session)
 
 @pytest.fixture()
-def transactions_for_metrics_testing_mtc_negative(session):
+def transactions_for_metrics_testing1(session, test_user):
     transactions_data = [
         {
             "id": 1,
@@ -558,7 +607,8 @@ def transactions_for_metrics_testing_mtc_negative(session):
             "description": "rent",
             "category": "Rent",
             "category_id":1,
-            "check_box": False
+            "check_box": False,
+            "owner_id": test_user['id'],
 
         },
         {
@@ -569,7 +619,8 @@ def transactions_for_metrics_testing_mtc_negative(session):
             "description": "water bill",
             "category": "Utilities",
             "category_id": 2,
-            "check_box": False
+            "check_box": False,
+            "owner_id": test_user['id'],
 
         },
         {
@@ -580,7 +631,8 @@ def transactions_for_metrics_testing_mtc_negative(session):
             "description": "power bill",
             "category": "Utilities",
             "category_id": 2,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id'],
 
         },
         {
@@ -591,7 +643,8 @@ def transactions_for_metrics_testing_mtc_negative(session):
             "description": "Paycheck",
             "category": "Paycheck",
             "category_id": 9,
-            "check_box": True
+            "check_box": True,
+            "owner_id": test_user['id'],
 
         },
         {
@@ -602,7 +655,196 @@ def transactions_for_metrics_testing_mtc_negative(session):
             "description": "side hustle",
             "category": "Side Hustle",
             "category_id": 10,
-            "check_box": False
+            "check_box": False,
+            "owner_id": test_user['id'],
+
+        },
+    ]
+
+    pass_to_db(transactions_data, models.Transaction, session)
+    return fetch_data(models.Transaction, session)
+
+
+
+################## For Testing Metrics 2 #####################
+
+@pytest.fixture()
+def categories_for_metrics_testing2(session, test_user):
+    categories_data = [
+        {
+           "id":1,
+           "name":"Rent",
+           "planned":900,
+           "goal":900,
+           "type": "Expense",
+           "header":"Bills",
+           "header_id":1,
+           "owner_id": test_user['id'],
+        },
+        {
+            "id":2,
+            "name":"Utilities",
+            "planned":150,
+            "goal":150,
+            "type": "Expense",
+            "header":"Bills",
+            "header_id":1,
+            "owner_id": test_user['id'],
+        },
+        {
+            "id":3,
+            "name":"Car Payment",
+            "planned":300,
+            "goal":350,
+            "type": "Expense",
+            "header":"Bills",
+            "header_id":1,
+            "owner_id": test_user['id'],
+        },
+        {
+            "id":4,
+            "name":"Car Insurance",
+            "planned":20,
+            "goal":400,
+            "type": "Expense",
+            "header":"Bills",
+            "header_id":1,
+            "owner_id": test_user['id'],
+        },
+        {
+           "id":5,
+           "name":"Groceries",
+           "planned":600,
+           "goal":0,
+           "type": "Expense",
+           "header":"Daily",
+           "header_id":2,
+           "owner_id": test_user['id'],
+        },
+        {
+           "id":6,
+           "name":"Gas",
+           "planned":300,
+           "goal":0,
+           "type": "Expense",
+           "header":"Daily",
+           "header_id":2,
+           "owner_id": test_user['id'],
+        },
+        {
+           "id":7,
+           "name":"Emergency Fund",
+           "planned":2730.29,
+           "goal":1500,
+           "type": "Expense",
+           "header":"Long Term",
+           "header_id":3,
+           "owner_id": test_user['id'],
+        },
+        {
+           "id":8,
+           "name":"New House",
+           "planned":8000,
+           "goal":6000,
+           "type": "Expense",
+           "header":"Long Term",
+           "header_id":3,
+           "owner_id": test_user['id'],
+        },
+        {
+           "id":9,
+           "name":"Paycheck",
+           "planned":0,
+           "goal":0,
+           "type": "Income",
+           "owner_id": test_user['id'],
+        },
+        {
+           "id":10,
+           "name":"Side Hustle",
+           "planned":0,
+           "goal":0,
+           "type": "Income",
+           "owner_id": test_user['id'],
+        },
+    ]
+
+    pass_to_db(categories_data, models.Category, session)
+    return fetch_data(models.Category, session)
+
+@pytest.fixture()
+def transactions_for_metrics_testing2(session, test_user):
+    transactions_data = [
+        {
+            "id": 1,
+            "type": "Expense",
+            "date": "2022-07-22",
+            "amount": float(900),
+            "description": "rent",
+            "category": "Rent",
+            "category_id":1,
+            "check_box": False,
+            "owner_id": test_user['id'],
+
+        },
+        {
+            "id": 2,
+            "type": "Expense",
+            "date": "2022-07-22",
+            "amount": float(30),
+            "description": "water bill",
+            "category": "Utilities",
+            "category_id": 2,
+            "check_box": False,
+            "owner_id": test_user['id'],
+
+        },
+        {
+            "id": 3,
+            "type": "Expense",
+            "date": "2022-07-22",
+            "amount": float(90.33),
+            "description": "power bill",
+            "category": "Utilities",
+            "category_id": 2,
+            "check_box": True,
+            "owner_id": test_user['id'],
+
+        },
+        {
+            "id": 4,
+            "type": "Income",
+            "date": "2022-06-07",
+            "amount": float(2000),
+            "description": "Paycheck",
+            "category": "Paycheck",
+            "category_id": 9,
+            "check_box": True,
+            "owner_id": test_user['id'],
+
+        },
+        {
+            "id": 5,
+            "type": "Income",
+            "date": "2022-06-08",
+            "amount": float(2000.29),
+            "description": "side hustle",
+            "category": "Side Hustle",
+            "category_id": 10,
+            "check_box": False,
+            "owner_id": test_user['id'],
+
+        },
+        {
+            "id": 6,
+            "type": "Income",
+            "date": "2022-06-08",
+            "amount": float(7000),
+            "description": "Paycheck",
+            "category": "Paycheck",
+            "category_id": 9,
+            "check_box": False,
+            "owner_id": test_user['id'],
 
         },
     ]

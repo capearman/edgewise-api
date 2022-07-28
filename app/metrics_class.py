@@ -6,7 +6,7 @@ class Metrics:
         self.actual_expenses = actual_expenses
         self.planned_expenses = planned_expenses
         self.last_month_balance = last_month_balance
-        self.money_to_categorize = actual_income - planned_expenses + last_month_balance
+        self.money_to_categorize = last_month_balance + actual_income - planned_expenses
         self.current_balance = planned_expenses - actual_expenses
 
     def get_money_to_categorize(self):

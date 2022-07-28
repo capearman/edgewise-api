@@ -56,8 +56,8 @@ def get_headers(db: Session = Depends(get_db), current_user: int = Depends(oauth
     
     headers = db.query(models.Header).filter(models.Header.owner_id == current_user.id).all()
 
-    if not headers:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with id: {id} does not exist")
+    # if not headers:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"category with id: {id} does not exist")
 
     return headers
 

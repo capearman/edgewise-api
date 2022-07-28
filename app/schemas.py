@@ -161,6 +161,9 @@ class Metrics(BaseModel):
     money_to_categorize: condecimal(max_digits=10, decimal_places=2)
     current_balance: condecimal(max_digits=10, decimal_places=2)
 
+class LastMonthBalance(BaseModel):
+    last_month_balance: condecimal(ge=0, max_digits=10, decimal_places=2)
+
 class Token(BaseModel):
     access_token: str
     token_type: str
