@@ -36,8 +36,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
 )
 
-#CORS stuff
-#TODO: Change this upon deployment?
+
 origins = ["*"]
 
 app.add_middleware(
@@ -48,9 +47,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# @app.get("/")
-# async def root():
-#     return {"message":"Prepare to budget your face off!"}
+@app.get("/")
+async def root():
+    return {"message":"Prepare to budget your face off!"}
 
 app.include_router(metrics.router)
 app.include_router(last_month_balance.router)
