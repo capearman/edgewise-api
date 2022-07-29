@@ -26,6 +26,10 @@ tags_metadata = [
     {
         "name": "Authentication",
         "description": "This endpoint is for authentication data but does not allow you to log in. To log in, use the 'Authorize' button at the top right side of this page.",
+    },
+    {
+        "name": "Users",
+        "description": "Allows you to create a user a get user information by id.",
     }
 ]
 
